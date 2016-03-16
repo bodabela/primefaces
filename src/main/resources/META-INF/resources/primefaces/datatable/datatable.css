@@ -203,6 +203,7 @@
     cursor:col-resize;
     background-image: url("#{resource['primefaces:spacer/dot_clear.gif']}");
     border: 1px solid transparent;
+    box-sizing: border-box;
 }
 
 .ui-datatable .ui-column-resizer-helper {
@@ -329,5 +330,10 @@
         margin-left: 5px;
         border-top-left-radius: 3px;
         border-bottom-left-radius: 3px;
+    }
+    
+    .ui-datatable-reflow tr.ui-datatable-empty-message > td {
+        display: block;
+        border: 0 none;
     }
 }
