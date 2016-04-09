@@ -283,43 +283,32 @@
             return this.getSelection().length > 0;
         },
 
-        cw : function(widgetConstructor, widgetVar, cfg, resource) {
-            this.createWidget(widgetConstructor, widgetVar, cfg, resource);
+        cw : function(widgetName, widgetVar, cfg) {
+            this.createWidget(widgetName, widgetVar, cfg);
         },
 
-        createWidget : function(widgetConstructor, widgetVar, cfg, resource) {
+        createWidget : function(widgetName, widgetVar, cfg) {
             cfg.widgetVar = widgetVar;
 
-            if(this.widget[widgetConstructor]) {
+            if(this.widget[widgetName]) {
                 var widget = this.widgets[widgetVar];
 
                 //ajax update
-                if(widget && (widget.constructor === this.widget[widgetConstructor])) {
+                if(widget && (widget.constructor === this.widget[widgetName])) {
                     widget.refresh(cfg);
                 }
                 //page init
                 else {
-                    this.widgets[widgetVar] = new this.widget[widgetConstructor](cfg);
+                    this.widgets[widgetVar] = new this.widget[widgetName](cfg);
                     if(this.settings.legacyWidgetNamespace) {
                         window[widgetVar] = this.widgets[widgetVar];
                     }
                 }
             }
-            // widget script not loaded -> lazy load script + stylesheet
+            // widget script not loaded
             else {
-                var scriptURI = this.getFacesResource(resource + '/' + resource + '.js', 'primefaces');
-                var cssURI = this.getFacesResource(resource + '/' + resource + '.css', 'primefaces');
-
-                //load css
-                var cssResource = '<link type="text/css" rel="stylesheet" href="' + cssURI + '" />';
-                $('head').append(cssResource);
-
-                //load script and initialize widget
-                this.getScript(scriptURI, function() {
-                    setTimeout(function() {
-                        PrimeFaces.widgets[widgetVar] = new PrimeFaces.widget[widgetConstructor](cfg);
-                    }, 100);
-                });
+                // should be loaded by our dynamic resource handling, log a error
+                PrimeFaces.error("Widget not available: " + widgetName);
             }
         },
 
@@ -339,13 +328,13 @@
                 name = name.substring(1, name.length);
             }
             
-            var scriptURI = $('script[src*="/' + PrimeFaces.RESOURCE_IDENTIFIER + '/' + PrimeFaces.getCoreScriptName() + '"]').attr('src');
+            var scriptURI = $('script[src*="/' + PrimeFaces.RESOURCE_IDENTIFIER + '/core.js"]').attr('src');
             // portlet
             if (!scriptURI) {
-                scriptURI = $('script[src*="' + PrimeFaces.RESOURCE_IDENTIFIER + '=' + PrimeFaces.getCoreScriptName() + '"]').attr('src');
+                scriptURI = $('script[src*="' + PrimeFaces.RESOURCE_IDENTIFIER + '=core.js"]').attr('src');
             }
 
-            scriptURI = scriptURI.replace(PrimeFaces.getCoreScriptName(), name);
+            scriptURI = scriptURI.replace('core.js', name);
             scriptURI = scriptURI.replace('ln=primefaces', 'ln=' + library);
 
             if (version) {
@@ -355,10 +344,6 @@
 
             var prefix = window.location.protocol + '//' + window.location.host;
             return scriptURI.indexOf(prefix) >= 0 ? scriptURI : prefix + scriptURI;
-        },
-
-        getCoreScriptName: function() {
-            return 'primefaces.js';
         },
 
         inArray: function(arr, item) {
@@ -381,7 +366,8 @@
                 url: url,
                 success: callback,
                 dataType: "script",
-                cache: true
+                cache: true,
+                async: false
             });
         },
 

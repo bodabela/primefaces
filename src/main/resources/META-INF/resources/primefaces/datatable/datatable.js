@@ -762,7 +762,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
     },
     
     bindContextMenu : function(menuWidget, targetWidget, targetId, cfg) {
-        var targetSelector = targetId + ' tbody.ui-datatable-data > tr.ui-widget-content:not(.ui-datatable-empty-message)';
+        var targetSelector = targetId + ' tbody.ui-datatable-data > tr.ui-widget-content';
         var targetEvent = cfg.event + '.datatable';
         
         $(document).off(targetEvent, targetSelector).on(targetEvent, targetSelector, null, function(e) {
@@ -785,6 +785,9 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                 targetWidget.contextMenuCell = cell;
                 targetWidget.contextMenuCell.addClass('ui-state-highlight');
 
+                menuWidget.show(e);
+            }
+            else if(row.hasClass('ui-datatable-empty-message')) {
                 menuWidget.show(e);
             }
         });
@@ -1939,7 +1942,7 @@ PrimeFaces.widget.DataTable = PrimeFaces.widget.DeferredWidget.extend({
                         
             $(document).off('click.datatable-cell-blur' + this.id)
                         .on('click.datatable-cell-blur' + this.id, function(e) {                            
-                            if(!$this.incellClick && $this.currentCell && !$this.contextMenuClick) {
+                            if(!$this.incellClick && $this.currentCell && !$this.contextMenuClick && !$.datepicker._datepickerShowing) {
                                 $this.saveCell($this.currentCell);
                             }
                             

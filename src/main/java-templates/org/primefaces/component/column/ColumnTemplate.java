@@ -6,16 +6,18 @@ import javax.faces.context.FacesContext;
 import javax.faces.event.PhaseId;
 import org.primefaces.model.menu.MenuModel;
 
-    private CellEditor cellEditor = null;
-
-
     public CellEditor getCellEditor() {
-            for(UIComponent child : getChildren()) {
-                if(child instanceof CellEditor && ((CellEditor)child).isRendered())
-                    cellEditor = (CellEditor) child;
-            }
-
-        return cellEditor;
+    	
+    	CellEditor cellEditor = null;
+    	
+	    for(UIComponent child : getChildren()) {
+	        if(child instanceof CellEditor && ((CellEditor)child).isRendered()) {
+	            cellEditor = (CellEditor) child;
+	        	break;
+	        }
+	    }
+	
+	    return cellEditor;
     }
 
     public boolean isDynamic() {
