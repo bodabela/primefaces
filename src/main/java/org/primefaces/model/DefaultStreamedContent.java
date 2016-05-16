@@ -51,6 +51,7 @@ public class DefaultStreamedContent implements StreamedContent {
         this.contentEncoding = contentEncoding;
 	}
 
+    @Override
 	public InputStream getStream() {
 		return stream;
 	}
@@ -59,14 +60,16 @@ public class DefaultStreamedContent implements StreamedContent {
 		this.stream = stream;
 	}
 	
+    @Override
 	public String getContentType() {
 		return contentType;
 	}
-	
+    
 	public void setContentType(String contentType) {
 		this.contentType = contentType;
 	}
 	
+    @Override
 	public String getName() {
 		return name;
 	}
@@ -75,10 +78,12 @@ public class DefaultStreamedContent implements StreamedContent {
 		this.name = name;
 	}
 
-    public void setContentEncoding(String contentEncoding) {
-        this.contentEncoding = contentEncoding;
-    }    
+    @Override
     public String getContentEncoding() {
         return contentEncoding;
     }
+    
+    public void setContentEncoding(String contentEncoding) {
+        this.contentEncoding = contentEncoding;
+    }    
 }

@@ -412,7 +412,7 @@ PrimeFaces.widget.InputTextarea = PrimeFaces.widget.DeferredWidget.extend({
 /**
  * PrimeFaces SelectOneMenu Widget
  */
-PrimeFaces.widget.SelectOneMenu = PrimeFaces.widget.BaseWidget.extend({
+PrimeFaces.widget.SelectOneMenu = PrimeFaces.widget.DeferredWidget.extend({
 
     init: function(cfg) {
         this._super(cfg);
@@ -431,6 +431,7 @@ PrimeFaces.widget.SelectOneMenu = PrimeFaces.widget.BaseWidget.extend({
         this.cfg.effect = this.cfg.effect||'fade';
         this.cfg.effectSpeed = this.cfg.effectSpeed||'normal';
         this.optGroupsSize = this.itemsContainer.children('li.ui-selectonemenu-item-group').length;
+        this.cfg.autoWidth = this.cfg.autoWidth === false ? false : true;
 
         var $this = this,
         selectedOption = this.options.filter(':selected'),
@@ -496,6 +497,14 @@ PrimeFaces.widget.SelectOneMenu = PrimeFaces.widget.BaseWidget.extend({
             .attr('aria-describedby', highlightedItemId)
             .attr('aria-disabled', this.disabled);
         this.itemsContainer.attr('aria-activedescendant', highlightedItemId);
+        
+        this.renderDeferred();
+    },
+    
+    _render: function() {
+        if(this.cfg.autoWidth) {
+            this.jq.css('min-width', this.input.outerWidth());
+        }        
     },
     
     refresh: function(cfg) {
@@ -830,6 +839,11 @@ PrimeFaces.widget.SelectOneMenu = PrimeFaces.widget.BaseWidget.extend({
                 break;
 
                 default:
+                    //function keys (F1,F2 etc.)
+                    if(key >= 112 && key <= 123) {
+                        break;
+                    }
+                    
                     var text = $(this).val(),
                     matchedOptions = null,
                     metaKey = e.metaKey||e.ctrlKey||e.shiftKey;
@@ -893,6 +907,11 @@ PrimeFaces.widget.SelectOneMenu = PrimeFaces.widget.BaseWidget.extend({
                 break;
 
                 default:
+                    //function keys (F1,F2 etc.)
+                    if(key >= 112 && key <= 123) {
+                        break;
+                    }
+                    
                     var metaKey = e.metaKey||e.ctrlKey;
                     
                     if(!metaKey) {
@@ -2118,7 +2137,10 @@ PrimeFaces.widget.SelectOneButton = PrimeFaces.widget.BaseWidget.extend({
         .on('click', function() {
             var button = $(this);
 
-            if(!button.hasClass('ui-state-active')) {
+            if(button.hasClass('ui-state-active')) {
+                $this.unselect(button);
+            }
+            else {
                 $this.select(button);
             }
         });
@@ -2152,7 +2174,10 @@ PrimeFaces.widget.SelectOneButton = PrimeFaces.widget.BaseWidget.extend({
                 var button = $(this),
                 radio = button.children(':radio');
                 
-                if(!radio.prop('checked')) {
+                if(radio.prop('checked')) {
+                    $this.unselect(button);
+                }
+                else {
                     $this.select(button);
                 }
                 e.preventDefault();
@@ -2165,6 +2190,10 @@ PrimeFaces.widget.SelectOneButton = PrimeFaces.widget.BaseWidget.extend({
 
         button.addClass('ui-state-active').children(':radio').prop('checked', true);
         this.triggerChange();
+    },
+    
+    unselect: function(button) {
+        button.removeClass('ui-state-active ui-state-hover ui-state-focus').children(':radio').prop('checked', false).change();  
     },
     
     triggerChange: function() {
@@ -2298,7 +2327,6 @@ PrimeFaces.widget.SelectCheckboxMenu = PrimeFaces.widget.BaseWidget.extend({
         this.keyboardTarget = $(this.jqId + '_focus');
         this.tabindex = this.keyboardTarget.attr('tabindex'); 
         this.cfg.showHeader = (this.cfg.showHeader === undefined) ? true : this.cfg.showHeader;
-        this.defaultLabel = this.label.text();
         
         if(!this.disabled) {
             this.renderPanel();
@@ -2315,7 +2343,15 @@ PrimeFaces.widget.SelectCheckboxMenu = PrimeFaces.widget.BaseWidget.extend({
             //mark trigger and descandants of trigger as a trigger for a primefaces overlay
             this.triggers.data('primefaces-overlay-target', true).find('*').data('primefaces-overlay-target', true);
         
-            this.updateLabel();
+            if(this.cfg.updateLabel) {
+                this.defaultLabel = this.label.text();
+                this.label.css({
+                    'text-overflow': 'ellipsis',
+                    overflow: 'hidden'
+                });
+                
+                this.updateLabel();
+            }
         }
 
         //pfs metadata
@@ -2785,7 +2821,9 @@ PrimeFaces.widget.SelectCheckboxMenu = PrimeFaces.widget.BaseWidget.extend({
                 this.updateToggler();
             }
             
-            this.updateLabel();
+            if(this.cfg.updateLabel) {
+                this.updateLabel();
+            }
         }
     },
 
@@ -2803,7 +2841,9 @@ PrimeFaces.widget.SelectCheckboxMenu = PrimeFaces.widget.BaseWidget.extend({
                 this.updateToggler();
             }
             
-            this.updateLabel();
+            if(this.cfg.updateLabel) {
+                this.updateLabel();
+            }
         }
     },
 
@@ -3189,7 +3229,6 @@ PrimeFaces.widget.SplitButton = PrimeFaces.widget.BaseWidget.extend({
 
     init: function(cfg) {
         this._super(cfg);
-
         this.button = $(this.jqId + '_button');
         this.menuButton = $(this.jqId + '_menuButton');
         this.menuId = this.jqId + "_menu";
@@ -3229,12 +3268,10 @@ PrimeFaces.widget.SplitButton = PrimeFaces.widget.BaseWidget.extend({
 
         //toggle menu
         this.menuButton.click(function() {
-            if($this.menu.is(':hidden')) {
+            if($this.menu.is(':hidden'))
                 $this.show();
-            }
-            else {
+            else
                 $this.hide();
-            }
         });
 
         //menuitem visuals
@@ -3249,6 +3286,54 @@ PrimeFaces.widget.SplitButton = PrimeFaces.widget.BaseWidget.extend({
             $(this).removeClass('ui-state-hover');
         }).click(function() {
             $this.hide();
+        });
+        
+        //keyboard support
+        this.menuButton.keydown(function(e) {
+            var keyCode = $.ui.keyCode;
+
+            switch(e.which) {
+                case keyCode.UP:
+                    var highlightedItem = $this.menuitems.filter('.ui-state-hover'),
+                    prevItems = highlightedItem.length ? highlightedItem.prevAll(':not(.ui-separator)') : null;
+                    
+                    if(prevItems && prevItems.length) {
+                        highlightedItem.removeClass('ui-state-hover');
+                        prevItems.eq(0).addClass('ui-state-hover');
+                    }
+                    
+                    e.preventDefault();
+                break;
+                
+                case keyCode.DOWN:
+                    var highlightedItem = $this.menuitems.filter('.ui-state-hover'),
+                    nextItems = highlightedItem.length ? highlightedItem.nextAll(':not(.ui-separator)') : $this.menuitems.eq(0);
+                    
+                    if(nextItems.length) {
+                        highlightedItem.removeClass('ui-state-hover');
+                        nextItems.eq(0).addClass('ui-state-hover');
+                    }
+                    
+                    e.preventDefault();
+                break;
+                
+                case keyCode.ENTER:
+                case keyCode.NUMPAD_ENTER:
+                case keyCode.SPACE:
+                    if($this.menu.is(':visible'))
+                        $this.menuitems.filter('.ui-state-hover').children('a').trigger('click');
+                    else
+                        $this.show();
+                    
+                    e.preventDefault();
+                break;
+                
+
+                case keyCode.ESCAPE:
+                case keyCode.TAB:
+                    $this.hide();
+                break;
+            }
         });
 
         var hideNS = 'mousedown.' + this.id;
@@ -3302,6 +3387,7 @@ PrimeFaces.widget.SplitButton = PrimeFaces.widget.BaseWidget.extend({
     },
 
     hide: function() {
+        this.menuitems.filter('.ui-state-hover').removeClass('ui-state-hover');
         this.menuButton.removeClass('ui-state-focus');
 
         this.menu.fadeOut('fast');

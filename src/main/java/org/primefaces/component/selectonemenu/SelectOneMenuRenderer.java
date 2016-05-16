@@ -27,6 +27,7 @@ import javax.faces.convert.Converter;
 import javax.faces.convert.ConverterException;
 import javax.faces.model.SelectItem;
 import javax.faces.model.SelectItemGroup;
+import javax.faces.render.Renderer;
 import org.primefaces.component.column.Column;
 import org.primefaces.context.RequestContext;
 import org.primefaces.expression.SearchExpressionFacade;
@@ -58,7 +59,12 @@ public class SelectOneMenuRenderer extends SelectOneRenderer {
     
     @Override
 	public Object getConvertedValue(FacesContext context, UIComponent component, Object submittedValue) throws ConverterException {
-        return context.getRenderKit().getRenderer("javax.faces.SelectOne", "javax.faces.Menu").getConvertedValue(context, component, submittedValue);
+        Renderer renderer = ComponentUtils.getUnwrappedRenderer(
+                context,
+                "javax.faces.SelectOne",
+                "javax.faces.Menu",
+                Renderer.class);
+        return renderer.getConvertedValue(context, component, submittedValue);
 	}
     
     @Override
@@ -354,7 +360,8 @@ public class SelectOneMenuRenderer extends SelectOneRenderer {
                 .attr("editable", menu.isEditable(), false)
                 .attr("appendTo", SearchExpressionFacade.resolveClientId(context, menu, menu.getAppendTo()), null)
                 .attr("syncTooltip", menu.isSyncTooltip(), false)
-                .attr("labelTemplate", menu.getLabelTemplate(), null);
+                .attr("labelTemplate", menu.getLabelTemplate(), null)
+                .attr("autoWidth", menu.isAutoWidth(), true);
         
         if(menu.isFilter()) {
             wb.attr("filter", true)

@@ -65,6 +65,7 @@ import org.primefaces.component.datatable.feature.*;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.ComponentUtils;
 import org.primefaces.util.SharedStringBuilder;
+import javax.faces.event.BehaviorEvent;
 
     private final static Logger logger = Logger.getLogger(DataTable.class.getName());
 
@@ -140,11 +141,33 @@ import org.primefaces.util.SharedStringBuilder;
     public static final String MOBILE_SORTED_COLUMN_CLASS = "ui-column-sorted";
     public static final String MOBILE_CELL_LABEL = "ui-table-cell-label";
 
-    private static final Collection<String> EVENT_NAMES = Collections.unmodifiableCollection(Arrays.asList("page","sort","filter", "rowSelect", 
-                                                        "rowUnselect", "rowEdit", "rowEditInit", "rowEditCancel", "colResize", "toggleSelect", "colReorder", "contextMenu"
-                                                        ,"rowSelectRadio", "rowSelectCheckbox", "rowUnselectCheckbox", "rowDblselect", "rowToggle"
-                                                        ,"cellEdit", "rowReorder", "swipeleft","swiperight","tap","taphold"));
-
+    private static final Map<String, Class<? extends BehaviorEvent>> BEHAVIOR_EVENT_MAPPING = Collections.unmodifiableMap(new HashMap<String, Class<? extends BehaviorEvent>>() {{
+        put("page", PageEvent.class);
+        put("sort", SortEvent.class);
+        put("filter", FilterEvent.class);
+        put("rowSelect", SelectEvent.class);
+        put("rowUnselect", UnselectEvent.class);
+        put("rowEdit", RowEditEvent.class);
+        put("rowEditInit", RowEditEvent.class);
+        put("rowEditCancel", RowEditEvent.class);
+        put("colResize", ColumnResizeEvent.class);
+        put("toggleSelect", ToggleSelectEvent.class);
+        put("colReorder", null);
+        put("contextMenu", SelectEvent.class);
+        put("rowSelectRadio", SelectEvent.class);
+        put("rowSelectCheckbox", SelectEvent.class);
+        put("rowUnselectCheckbox", UnselectEvent.class);
+        put("rowDblselect", SelectEvent.class);
+        put("rowToggle", ToggleEvent.class);
+        put("cellEdit", CellEditEvent.class);
+        put("rowReorder", ReorderEvent.class);
+        put("swipeleft", SwipeEvent.class);
+        put("swiperight", SwipeEvent.class);
+        put("tap", SelectEvent.class);
+        put("taphold", SelectEvent.class);
+    }});
+    
+    private static final Collection<String> EVENT_NAMES = BEHAVIOR_EVENT_MAPPING.keySet();
                                                         
     static Map<DataTableFeatureKey,DataTableFeature> FEATURES;
     
@@ -174,6 +197,10 @@ import org.primefaces.util.SharedStringBuilder;
     
     public boolean isRowEditRequest(FacesContext context) {
         return context.getExternalContext().getRequestParameterMap().containsKey(this.getClientId(context) + "_rowEditAction");
+    }
+
+    public boolean isCellEditCancelRequest(FacesContext context) {
+        return context.getExternalContext().getRequestParameterMap().containsKey(this.getClientId(context) + "_cellEditCancel");
     }
     
     public boolean isRowEditCancelRequest(FacesContext context) {
@@ -477,32 +504,13 @@ import org.primefaces.util.SharedStringBuilder;
         if(model != null && model instanceof LazyDataModel) {            
             LazyDataModel lazyModel = (LazyDataModel) model;
             List<?> data = null;
-            boolean lazyCache = this.isLazyCache();
             
-            //#7176
             calculateFirst();
-
-            int first = this.getFirst();
-
-            //try to load from cache
-            if(lazyCache) {
-                Map<String,List> lazyCacheData = this.getLazyCacheData();
-                if(lazyCacheData != null) {
-                    data = lazyCacheData.get(String.valueOf(first));
-                }
-            }
             
-            if(data == null) {
-                if(this.isMultiSort())
-                    data = lazyModel.load(first, getRows(), getMultiSortMeta(), getFilters());
-                else
-                    data = lazyModel.load(first, getRows(),  resolveSortField(), convertSortOrder(), getFilters());
-            
-                //save in cache
-                if(lazyCache) {
-                    this.insertIntoLazyCache(first, data);
-                }
-            }
+            if(this.isMultiSort())
+                data = lazyModel.load(getFirst(), getRows(), getMultiSortMeta(), getFilters());
+            else
+                data = lazyModel.load(getFirst(), getRows(),  resolveSortField(), convertSortOrder(), getFilters());
             
             lazyModel.setPageSize(getRows());
             lazyModel.setWrappedData(data);
@@ -514,28 +522,6 @@ import org.primefaces.util.SharedStringBuilder;
                 if(requestContext != null) {
                     requestContext.addCallbackParam("totalRecords", lazyModel.getRowCount());
                 }
-            }
-        }
-    }
-
-    public void loadLazyDataToCache(int offset) {
-        DataModel model = getDataModel();
-        
-        if(model != null && model instanceof LazyDataModel) {            
-            LazyDataModel lazyModel = (LazyDataModel) model;
-            List<?> data = null;
-            Map<String,List> lazyCacheData = this.getLazyCacheData();
-            if(lazyCacheData != null) {
-                data = lazyCacheData.get(String.valueOf(offset));
-            }
-			
-            if(data == null) {
-                if(this.isMultiSort())
-                    data = lazyModel.load(offset, getRows(), getMultiSortMeta(), getFilters());
-                else
-                    data = lazyModel.load(offset, getRows(),  resolveSortField(), convertSortOrder(), getFilters());
-
-                this.insertIntoLazyCache(offset, data);
             }
         }
     }
@@ -722,6 +708,11 @@ import org.primefaces.util.SharedStringBuilder;
     public Object getLocalSelection() {
 		return getStateHelper().get(PropertyKeys.selection);
 	}
+
+    @Override
+    public Map<String, Class<? extends BehaviorEvent>> getBehaviorEventMapping() {
+         return BEHAVIOR_EVENT_MAPPING;
+    }
 
     @Override
     public Collection<String> getEventNames() {
@@ -917,7 +908,10 @@ import org.primefaces.util.SharedStringBuilder;
                         }
                     }
                     else if(kid instanceof Column) {
-                        columnsCountWithSpan += ((Column) kid).getColspan();
+                        Column col = (Column) kid;
+                        if(col.isVisible()) {
+                            columnsCountWithSpan += col.getColspan();
+                        }
                     } 
                     else if(kid instanceof SubTable) {
                         SubTable subTable = (SubTable) kid;
@@ -1284,46 +1278,3 @@ import org.primefaces.util.SharedStringBuilder;
             this.setColumns(null);
         }
     }
-
-    public void setLazyCacheData(Map<String,List> data) {
-        List<String> keys = new ArrayList<String>();
-        List<List<?>> values = new ArrayList<List<?>>();
-        for (Map.Entry<String, List> entry : data.entrySet()) {
-            keys.add(entry.getKey());
-            values.add(entry.getValue());        
-        }
-        
-        getStateHelper().put("lazyCacheDataKeys", keys);
-        getStateHelper().put("lazyCacheDataValues", values);
-    }
-    
-    public Map<String,List> getLazyCacheData() {
-        List<String> keys = (List<String>) getStateHelper().get("lazyCacheDataKeys");
-        List<List<?>> values = (List<List<?>>) getStateHelper().get("lazyCacheDataValues");
-        
-        if(keys != null) {
-            Map<String,List> map = new LinkedHashMap<String, List>();
-            for (int i = 0; i < keys.size(); i++) {
-                map.put(keys.get(i), values.get(i));
-            }
-            return map;
-        }
-        else {
-            return null;
-        }
-    }
-
-    private void insertIntoLazyCache(int offset, List<?> data) {
-        Map<String,List> lazyCacheData = this.getLazyCacheData();
-        if(lazyCacheData == null) {
-            lazyCacheData = new LinkedHashMap<String,List>();
-        }
-        else if(this.getLazyCacheSize() == lazyCacheData.size()) {
-            //remove first-in to make room
-            lazyCacheData.remove(lazyCacheData.keySet().iterator().next());
-        }
-        lazyCacheData.put(String.valueOf(offset), data);
-        this.setLazyCacheData(lazyCacheData);
-    }       
-    
-   

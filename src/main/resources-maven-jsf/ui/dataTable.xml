@@ -25,6 +25,9 @@
         <interface>
 			<name>javax.faces.component.behavior.ClientBehaviorHolder</name>
 		</interface>
+        <interface>
+			<name>org.primefaces.component.api.PrimeClientBehaviorHolder</name>
+		</interface>
 	</interfaces>
 	<attributes>
 		&data_component_attributes;
@@ -464,19 +467,12 @@
 			<type>java.lang.String</type>
             <description>Label to read by screen readers on checkbox selection.</description>
 		</attribute>
-        <attribute>
-			<name>lazyCache</name>
-			<required>false</required>
-			<type>java.lang.Boolean</type>
-            <defaultValue>false</defaultValue>
-            <description>Caches the next page asynchronously, default is false.</description>
-		</attribute>
          <attribute>
-			<name>lazyCacheSize</name>
+			<name>saveOnCellBlur</name>
 			<required>false</required>
-			<type>java.lang.Integer</type>
-            <defaultValue>5</defaultValue>
-            <description>Number of entries in lazy cache buffer</description>
+            <type>java.lang.Boolean</type>
+            <defaultValue>true</defaultValue>
+            <description>Saves the changes in cell editing on blur, when set to false changes are discarded.</description>
 		</attribute>
 	</attributes>
 	<resources>

@@ -35,9 +35,9 @@ import org.primefaces.util.Constants;
 /**
  * Container for all config parameters.
  */
-public class ConfigContainer {
+public class PrimeConfiguration {
 
-    private static final Logger LOG = Logger.getLogger(ConfigContainer.class.getName());
+    private static final Logger LOG = Logger.getLogger(PrimeConfiguration.class.getName());
 
     // context params
     private boolean validateEmptyFields = false;
@@ -55,6 +55,7 @@ public class ConfigContainer {
     private boolean legacyWidgetNamespace = false;
     private boolean beanValidationDisabled = false;
     private boolean interpolateClientSideValidationMessages = false;
+    private boolean earlyPostParamEvaluation = false;
 
     // internal config
     private boolean beanValidationAvailable = false;
@@ -70,11 +71,11 @@ public class ConfigContainer {
     // web.xml
     private Map<String, String> errorPages = null;
 
-    protected ConfigContainer() {
+    protected PrimeConfiguration() {
 
     }
 
-    public ConfigContainer(FacesContext context) {
+    public PrimeConfiguration(FacesContext context) {
         initConfigFromContextParams(context);
         initConfig(context);
         initBuildProperties();
@@ -142,6 +143,9 @@ public class ConfigContainer {
         
         value = externalContext.getInitParameter(Constants.ContextParams.INTERPOLATE_CLIENT_SIDE_VALIDATION_MESSAGES);
         interpolateClientSideValidationMessages = (value == null) ? false : Boolean.valueOf(value);
+
+        value = externalContext.getInitParameter(Constants.ContextParams.EARLY_POST_PARAM_EVALUATION);
+        earlyPostParamEvaluation = (value == null) ? false : Boolean.valueOf(value);
     }
 
     protected void initValidateEmptyFields(FacesContext context) {
@@ -371,5 +375,8 @@ public class ConfigContainer {
     public boolean isAtLeastBV11() {
         return bv11;
     }
-    
+
+    public boolean isEarlyPostParamEvaluation() {
+        return earlyPostParamEvaluation;
+    }
 }

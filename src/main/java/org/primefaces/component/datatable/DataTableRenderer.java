@@ -184,7 +184,10 @@ public class DataTableRenderer extends DataRenderer {
         
         //Editing
         if(table.isEditable()) {
-            wb.attr("editable", true).attr("editMode", table.getEditMode()).attr("cellSeparator", table.getCellSeparator(), null);
+            wb.attr("editable", true)
+                .attr("editMode", table.getEditMode())
+                .attr("cellSeparator", table.getCellSeparator(), null)
+                .attr("saveOnCellBlur", table.isSaveOnCellBlur(), true);
         }
         
         //MultiColumn Sorting
@@ -198,8 +201,7 @@ public class DataTableRenderer extends DataRenderer {
 
         wb.attr("tabindex", table.getTabindex(), "0")
             .attr("reflow", table.isReflow(), false)
-            .attr("rowHover", table.isRowHover(), false)
-            .attr("lazyCache", table.isLazyCache(), false);
+            .attr("rowHover", table.isRowHover(), false);
         
         //Behaviors
         encodeClientBehaviors(context, table);
