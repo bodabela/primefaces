@@ -63,6 +63,18 @@
     padding: 0.29em;
 }
 
+.ui-autocomplete-panel .ui-autocomplete-moretext {
+    font-size: 90%;
+    font-weight: bold;
+}
+
+.ui-autocomplete-list .ui-autocomplete-moretext {
+    margin: 1px 0;
+    padding: 3px 5px;
+    text-align: left;
+    border: 0 none;
+}
+
 /* Multiple Selection */
 .ui-autocomplete-multiple-container {
     clear: left;
